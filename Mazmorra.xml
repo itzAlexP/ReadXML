@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mazmorra>
+    <habitacion id = "1">
+        <descripcion>
+            Ves una piedra con una descripcion que pone: Viva el modelo OSI.
+        </descripcion>
+        <conexiones>
+            <norte>Pasillo 1.</norte>
+        </conexiones>
+    </habitacion>
+    <habitacion id = "2">
+        <descripcion>
+            Oyes una voz que te susurra: Esta practica va a por el 10.
+        </descripcion> 
+        <conexiones>
+            <sur>Pasillo 1.</sur>
+            <este>Pasillo 2.</este>
+        </conexiones>
+    </habitacion>
+    <habitacion id = "3">
+        <descripcion>
+            Hay un testamento en el suelo que tiene escrito: Borra mi historial de internet.
+        </descripcion>
+        <conexiones>
+            <oeste>Pasillo2.</oeste>
+        </conexiones>
+    </habitacion>
+    <habitacion id = "4">
+        <conexiones>
+            <norte>Sala 2.</norte>
+            <sur>Sala 1.</sur>
+        </conexiones>
+    </habitacion>
+    <habitacion id = "5">
+        <conexiones>
+            <oeste>Sala 2.</oeste>
+            <este>Sala 3.</este>
+        </conexiones>
+    </habitacion>
+ </mazmorra>
