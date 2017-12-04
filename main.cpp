@@ -9,12 +9,12 @@
 #include <pugixml.hpp>
 
 #define HOST "tcp://127.0.0.1:3306"
-#define USER "root"
-#define PASSWORD "salvadorgroc"
+#define USER ""
+#define PASSWORD ""
 #define DATABASE "dbgame"
 
 #ifndef DEBUG
-    #define PUGIXML_HEADER_ONLY
+#define PUGIXML_HEADER_ONLY
 #endif
 
 #include <pugixml.hpp>
@@ -33,7 +33,8 @@ sUserPass,
 sUserPassRepeat,
 sUserRaces,
 sCharacterName,
-sPlayerPosition;
+sPlayerPosition,
+sPlayerSelection;
 
 std::vector<string> sNameRaces;
 
@@ -91,7 +92,6 @@ int main()
                 while(!bPlayerCreated)//Mientras no este el jugador creado repetiremos
                 {
                     //Pedimos al usuario que indique un nuevo usuario
-
                     std::cin >> sUserNick;
 
                     //Comprobamos si el nick esta libre
@@ -124,7 +124,6 @@ int main()
                             }
                         }
 
-                        //Creacion de raza
                         system("clear");
 
                         //Listamos las razas
@@ -158,9 +157,11 @@ int main()
                             }
                         }
 
+                        //Creacion del nombre del personaje
                         std::cout << "\nInserte nombre del personaje." << std::endl;
                         while(!bCharacterCreated)
                         {
+                            //Pedimos nombre de personaje al usuario y comprobamos su disponibilidad
                             std::cin >> sCharacterName;
                             res = stmt->executeQuery("SELECT count(*) FROM Personajes, Jugadores, Razas WHERE Personajes.IDJugador = Jugadores.JugadorID AND Personajes.IDRaza = Razas.RazaID AND Personajes.Nombre = '"+sCharacterName+"'");
                             if(res->next() && res->getInt(1) == 1) //Existe personaje
@@ -170,6 +171,7 @@ int main()
                             else //Nombre libre
                             {
                                 bCharacterCreated = true;
+
                                 //Obtenemos id del jugador
                                 res = stmt->executeQuery("SELECT JugadorId FROM Jugadores WHERE Nombre = '"+sUserNick+"'");
                                 while(res->next())
@@ -199,7 +201,7 @@ int main()
 
         system("clear");
 
-        std::cout << "Empieza el juego.";
+        std::cout << "Empieza el juego.\n\n";
 
         //Cargamos archivo xml
         pugi::xml_parse_result result = doc.load_file("Mazmorra.xml");
@@ -207,16 +209,37 @@ int main()
 
         //Nos desplazamos hasta la sala inicial
         currentNode = currentNode.child("habitacion");
-        sPlayerPosition = currentNode.attribute("id").value();
 
+        //Hasta que el usuario no escriba quit no pararemos el juego
+        while(sPlayerSelection != "quit")
+        {
 
-        std::cout << sPlayerPosition << std::endl;
+            //Imprimimos descripcion
+            std::cout << currentNode.child_value("descripcion");
+            std::cout << "Hacia donde quieres ir?\n" << std::endl;
 
+            //Obtenemos las direcciones
+            for(pugi::xml_node direccion = currentNode.child("conexiones"); direccion; direccion = direccion.next_sibling("conexiones"))
+            {
 
+                if(direccion.child_value("Norte") != "")std::cout << "- Norte" << std::endl;
+                if(direccion.child_value("Sur") != "")std::cout << "- Sur" << std::endl;
+                if(direccion.child_value("Este") != "")std::cout << "- Este" << std::endl;
+                if(direccion.child_value("Oeste") != "")std::cout << "- Oeste" << std::endl;
+            }
 
+            //Almacenamos la seleccion del usuario.
+            std::cout << std::endl;
+            std::cin >> sPlayerSelection;
 
+            //Si la opcion es valida obtenemos la nueva sala seleccionada por el usuario y repetimos proceso
+            if(doc.child("mazmorra").find_child_by_attribute("habitacion", "id", currentNode.child("conexiones").child_value(sPlayerSelection.c_str())) != NULL)
+            {
+                currentNode = doc.child("mazmorra").find_child_by_attribute("habitacion", "id", currentNode.child("conexiones").child_value(sPlayerSelection.c_str()));
+            }
 
-
+            system("clear");
+        }
     }
 
     catch(sql::SQLException &e)
