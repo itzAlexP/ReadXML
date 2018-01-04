@@ -9,8 +9,8 @@
 #include <pugixml.hpp>
 
 #define HOST "tcp://127.0.0.1:3306"
-#define USER ""
-#define PASSWORD ""
+#define USER "root"
+#define PASSWORD "salvadorgroc"
 #define DATABASE "dbgame"
 
 #ifndef DEBUG
@@ -34,7 +34,8 @@ sUserPassRepeat,
 sUserRaces,
 sCharacterName,
 sPlayerPosition,
-sPlayerSelection;
+sPlayerSelection,
+sCharacterSelected;
 
 std::vector<string> sNameRaces;
 
@@ -73,11 +74,48 @@ int main()
                 std::cout << "\nIntroduzca contraseña" << std::endl;
                 std::cin >> sUserPass;
 
+                //Liberamos resultset anterior
+                delete(res);
+
                 //Comprobamos si existe usuario con dichos datos
                 sql::ResultSet* res = stmt->executeQuery("SELECT count(*) FROM Jugadores WHERE Nombre = '" + sUserNick + "' AND Pass = '" + sUserPass + "'");
 
+
                 if(res->next() && res->getInt(1) == 1) //Existe usuario con contraseña
                 {
+                    //Liberamos resultset anterior
+                    delete(res);
+
+                    //Obtenemos el id del jugador
+                    res = stmt->executeQuery("SELECT JugadorID FROM Jugadores WHERE Nombre = '" + sUserNick + "' AND Pass = '" + sUserPass + "'");
+
+                    while(res->next())
+                    {
+
+                        iIdJugador = res->getInt("JugadorID");
+                    }
+
+                    //Liberamos resultset anterior
+                    delete(res);
+
+                    //Listamos los personajes del jugador
+                    system("clear");
+                    std::cout << "Selecciones personaje. \n" << std::endl;
+                    res = stmt->executeQuery("SELECT Personajes.Nombre AS pNombre, Razas.Nombre AS rNombre FROM Personajes, Jugadores, Razas WHERE Personajes.IDJugador = Jugadores.JugadorID AND Personajes.IDRaza = Razas.RazaID AND Personajes.IDJugador = "+std::to_string(iIdJugador)+"");
+
+                    std::cout<<"Nombre     |      Raza\n"<<std::endl;
+                    while(res->next())
+                    {
+                        std::cout<<res->getString("pNombre")<<"    |     "<<res->getString("rNombre")<<std::endl;
+                    }
+
+                    //Almacenamos id del personaje seleccionado
+                    std::cin >> sCharacterSelected;
+
+
+                    //Liberamos resultset anterior
+                    delete(res);
+
                     //Se han validado los datos y puede iniciar el juego.
                     bVerified = true;
                 }
@@ -85,6 +123,8 @@ int main()
                 {
                     std::cout << "\nNo se ha encontrado ningun usuario con esa contraseña.\n" << std::endl;
                 }
+
+
             }
             else //No existe usuario
             {
@@ -93,6 +133,9 @@ int main()
                 {
                     //Pedimos al usuario que indique un nuevo usuario
                     std::cin >> sUserNick;
+
+                    //Liberamos resultset anterior
+                    delete(res);
 
                     //Comprobamos si el nick esta libre
                     sql::ResultSet* res = stmt->executeQuery("SELECT count(*) FROM Jugadores WHERE Nombre = '" + sUserNick + "'");
@@ -125,6 +168,9 @@ int main()
                         }
 
                         system("clear");
+
+                        //Liberamos resultset anterior
+                        delete(res);
 
                         //Listamos las razas
                         res = stmt->executeQuery("SELECT Nombre, Descripcion FROM Razas");
@@ -163,6 +209,10 @@ int main()
                         {
                             //Pedimos nombre de personaje al usuario y comprobamos su disponibilidad
                             std::cin >> sCharacterName;
+
+                            //Liberamos resultset anterior
+                            delete(res);
+
                             res = stmt->executeQuery("SELECT count(*) FROM Personajes, Jugadores, Razas WHERE Personajes.IDJugador = Jugadores.JugadorID AND Personajes.IDRaza = Razas.RazaID AND Personajes.Nombre = '"+sCharacterName+"'");
                             if(res->next() && res->getInt(1) == 1) //Existe personaje
                             {
@@ -172,6 +222,9 @@ int main()
                             {
                                 bCharacterCreated = true;
 
+                                //Liberamos resultset anterior
+                                delete(res);
+
                                 //Obtenemos id del jugador
                                 res = stmt->executeQuery("SELECT JugadorId FROM Jugadores WHERE Nombre = '"+sUserNick+"'");
                                 while(res->next())
@@ -179,6 +232,9 @@ int main()
 
                                     iIdJugador = res->getInt("JugadorID");
                                 }
+
+                                //Liberamos resultset anterior
+                                delete(res);
 
                                 //Obtenemos id de la raza
                                 res = stmt->executeQuery("SELECT RazaId FROM Razas WHERE Nombre = '"+sUserRaces+"'");
@@ -190,15 +246,21 @@ int main()
 
                                 //Insertamos el personaje en la base de datos
                                 stmt->execute("INSERT INTO Personajes(Nombre, IDJugador, IDRaza) VALUES ('"+sCharacterName+"', "+ std::to_string(iIdJugador) +", "+ std::to_string(iIdRaza) +")");
-
-                                bVerified = true;
+                                system("clear");
                             }
                         }
                     }
                 }
             }
+
+            //Cerramos elementos usados para la conexion con la base de datos
+            //delete(res);
+            //delete(stmt);
+            //delete(con);
+
         }
 
+        //Iniciamos el juego
         system("clear");
 
         std::cout << "Empieza el juego.\n\n";
@@ -231,6 +293,7 @@ int main()
             //Almacenamos la seleccion del usuario.
             std::cout << std::endl;
             std::cin >> sPlayerSelection;
+
 
             //Si la opcion es valida obtenemos la nueva sala seleccionada por el usuario y repetimos proceso
             if(doc.child("mazmorra").find_child_by_attribute("habitacion", "id", currentNode.child("conexiones").child_value(sPlayerSelection.c_str())) != NULL)
